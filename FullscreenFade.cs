@@ -17,7 +17,6 @@ public class FullscreenFade : MonoBehaviour {
 	public float fadeDuration = 2.0f;
 	public bool useTimer = false;
 	public Color fadeColor;
-	public Text text;
 	public delegate void FadeInBegins();
 	public delegate void FadeOutBegins();
 	public delegate void FadeInEnds();
@@ -63,11 +62,13 @@ public class FullscreenFade : MonoBehaviour {
 		fadeCanvas.AddComponent<Canvas>();
 		Canvas canvas = fadeCanvas.GetComponent<Canvas>();
 		canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+		canvas.overrideSorting = true;
 		fadeCanvas.AddComponent<Image>();
 		fadeImage = fadeCanvas.GetComponent<Image>();
-		fadeImage.color = fadeColor != null ? fadeColor : Color.black;
+		// FYI Color.black has an alpha of 0 so we need to construct the color ourselves
+		fadeImage.color = fadeColor != null ? fadeColor : new Color(0.0f, 0.0f, 0.0f, 1.0f);
 		fadeImage.enabled = useTimer ? true : false;
-		fadeImage.rectTransform.localScale = new Vector2 (Screen.width, Screen.height);
+		fadeImage.rectTransform.localScale = new Vector2(Screen.width, Screen.height);
 	}
 
 	public void triggerFadeIn() {
