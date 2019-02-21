@@ -4,17 +4,26 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 public class SceneController : MonoBehaviour {
 	private int currentSceneIndex = 1;
+	public bool useFade = false;
 	// Use this for initialization
 	void Awake() {
 		DontDestroyOnLoad(gameObject);
 	}
 
 	void OnEnable() {
-		FullscreenFade.OnFadeOutEnds += loadNext;
+		if (useFade) {
+			FullscreenFade.OnFadeOutEnds += loadNext;
+		} else {
+			SceneTimer.OnSceneDurationEnd += loadNext;
+		}
 	}
 
 	void OnDisable() {
-		FullscreenFade.OnFadeOutEnds -= loadNext;
+		if (useFade) {
+			FullscreenFade.OnFadeOutEnds -= loadNext;
+		} else {
+			SceneTimer.OnSceneDurationEnd -= loadNext;
+		}
 	}
 
 	void Start () {

@@ -6,8 +6,8 @@ using System;
 public class RotateCamera : MonoBehaviour {
 	public float speed;
 	public GameObject go;
-
 	public bool fitCamera = false;
+	public bool useFade = false;
 	private float fov;
 	private bool rotationStarted = false;
 	// Use this for initialization
@@ -16,11 +16,19 @@ public class RotateCamera : MonoBehaviour {
 	}
 
 	void OnEnable() {
-		FullscreenFade.OnFadeInEnds += startRotation;
+		if (useFade) {
+			FullscreenFade.OnFadeInEnds += startRotation;
+		} else {
+			SceneTimer.OnSceneDurationStart += startRotation;
+		}
 	}
 
 	void OnDisable() {
-		FullscreenFade.OnFadeInEnds += startRotation;
+		if (useFade) {
+			FullscreenFade.OnFadeInEnds += startRotation;
+		} else {
+			SceneTimer.OnSceneDurationStart -= startRotation;
+		}
 	}
 	
 	// Update is called once per frame

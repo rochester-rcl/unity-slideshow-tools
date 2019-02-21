@@ -16,6 +16,7 @@ public class FullscreenFade : MonoBehaviour {
 	// public properties
 	public float fadeDuration = 2.0f;
 	public bool useTimer = false;
+	public Vector2 referenceResolution = new Vector2(1440, 2560);
 	public Color fadeColor;
 	public delegate void FadeInBegins();
 	public delegate void FadeOutBegins();
@@ -60,15 +61,25 @@ public class FullscreenFade : MonoBehaviour {
 		fadeCanvas = new GameObject();
 		fadeCanvas.name = "CanvasOverlay";
 		fadeCanvas.AddComponent<Canvas>();
+		fadeCanvas.AddComponent<CanvasScaler>();
 		Canvas canvas = fadeCanvas.GetComponent<Canvas>();
-		canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+		CanvasScaler scaler = fadeCanvas.GetComponent<CanvasScaler>();
+		scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+		scaler.matchWidthOrHeight = 1;
+		canvas.renderMode = RenderMode.ScreenSpaceCamera;
+		canvas.worldCamera = Camera.main;
+		canvas.planeDistance = Camera.main.nearClipPlane + 0.001f;
 		canvas.overrideSorting = true;
 		fadeCanvas.AddComponent<Image>();
 		fadeImage = fadeCanvas.GetComponent<Image>();
+		fadeImage.preserveAspect = false;
 		// FYI Color.black has an alpha of 0 so we need to construct the color ourselves
 		fadeImage.color = fadeColor != null ? fadeColor : new Color(0.0f, 0.0f, 0.0f, 1.0f);
 		fadeImage.enabled = useTimer ? true : false;
-		fadeImage.rectTransform.localScale = new Vector2(Screen.width, Screen.height);
+		fadeImage.rectTransform.anchorMin = Vector2.zero;
+		fadeImage.rectTransform.anchorMax = Vector2.one;
+		fadeImage.rectTransform.sizeDelta = Vector2.zero;
+		// fadeImage.rectTransform.localScale = new Vector2(Screen.width, Screen.height);
 	}
 
 	public void triggerFadeIn() {
@@ -80,6 +91,7 @@ public class FullscreenFade : MonoBehaviour {
 	}
 
 	public void triggerFadeOut() {
+		fadeImage.enabled = true;
 		fadeOutTriggered = true;
 		if (OnFadeOutBegins != null) {
 			OnFadeOutBegins();
@@ -88,6 +100,7 @@ public class FullscreenFade : MonoBehaviour {
 
 	public void finishFadeIn() {
 		fadeInTriggered = false;
+		fadeImage.enabled = false;
 		timeSinceFadeInTriggered = 0.0f;
 		if (OnFadeInEnds != null) {
 			OnFadeInEnds();
