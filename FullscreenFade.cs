@@ -16,8 +16,11 @@ public class FullscreenFade : MonoBehaviour {
 	// public properties
 	public float fadeDuration = 2.0f;
 	public bool useTimer = false;
-	public Vector2 referenceResolution = new Vector2(1440, 2560);
-	public Color fadeColor;
+	public Vector2 referenceResolution = new Vector2(800, 600);
+	[Tooltip("The fill color for the fullscreen fade effect")]
+	public Color fadeColor = new Color(0.0f, 0.0f, 0.0f, 1.0f);
+	[Tooltip("Sets the distance of the fade plane from the camera")]
+	public float planeDistanceOverride = 1.0f;
 	public delegate void FadeInBegins();
 	public delegate void FadeOutBegins();
 	public delegate void FadeInEnds();
@@ -60,29 +63,26 @@ public class FullscreenFade : MonoBehaviour {
 	public void initFadeImage() {
 		fadeCanvas = new GameObject();
 		fadeCanvas.name = "CanvasOverlay";
-		fadeCanvas.AddComponent<Canvas>();
-		fadeCanvas.AddComponent<CanvasScaler>();
-		Canvas canvas = fadeCanvas.GetComponent<Canvas>();
-		CanvasScaler scaler = fadeCanvas.GetComponent<CanvasScaler>();
+		Canvas canvas = fadeCanvas.AddComponent<Canvas>();
+		CanvasScaler scaler = fadeCanvas.AddComponent<CanvasScaler>();
+		GraphicRaycaster rayCaster = fadeCanvas.AddComponent<GraphicRaycaster>();
+		rayCaster.blockingObjects = GraphicRaycaster.BlockingObjects.None;
+		rayCaster.ignoreReversedGraphics = true;
 		scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-		scaler.matchWidthOrHeight = 1;
+		scaler.matchWidthOrHeight = 0;
+		scaler.referencePixelsPerUnit = 100;
 		canvas.renderMode = RenderMode.ScreenSpaceCamera;
+		// TODO throw exception if Camera.main is null
 		canvas.worldCamera = Camera.main;
-		canvas.planeDistance = Camera.main.nearClipPlane + 0.001f;
+		canvas.planeDistance = planeDistanceOverride;
 		canvas.overrideSorting = true;
-		fadeCanvas.AddComponent<Image>();
-		fadeImage = fadeCanvas.GetComponent<Image>();
-		fadeImage.preserveAspect = false;
-		// FYI Color.black has an alpha of 0 so we need to construct the color ourselves
-		fadeImage.color = fadeColor != null ? fadeColor : new Color(0.0f, 0.0f, 0.0f, 1.0f);
+		fadeImage = fadeCanvas.AddComponent<Image>();
+		fadeImage.color = fadeColor;
 		fadeImage.enabled = useTimer ? true : false;
-		fadeImage.rectTransform.anchorMin = Vector2.zero;
-		fadeImage.rectTransform.anchorMax = Vector2.one;
-		fadeImage.rectTransform.sizeDelta = Vector2.zero;
-		// fadeImage.rectTransform.localScale = new Vector2(Screen.width, Screen.height);
 	}
 
 	public void triggerFadeIn() {
+		print("fade in");
 		fadeImage.enabled = true;
 		fadeInTriggered = true;
 		if (OnFadeInBegins != null) {
