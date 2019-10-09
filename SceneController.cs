@@ -2,46 +2,99 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-public class SceneController : MonoBehaviour {
-	private int currentSceneIndex = 1;
-	public bool useFade = false;
-	// Use this for initialization
-	void Awake() {
-		DontDestroyOnLoad(gameObject);
-	}
+using System.Threading.Tasks;
+public class SceneController : MonoBehaviour
+{
+    private int currentSceneIndex = 0;
+    public bool useFade = false;
+    // Use this for initialization
+    private FullscreenFade FadeController;
+    void Awake()
+    {
+		FadeController = gameObject.AddComponent<FullscreenFade>();
+        DontDestroyOnLoad(gameObject);
+    }
 
-	void OnEnable() {
-		if (useFade) {
-			FullscreenFade.OnFadeOutEnds += loadNext;
-		} else {
-			SceneTimer.OnSceneDurationEnd += loadNext;
-		}
-	}
+    void OnEnable()
+    {
+        SceneTimer.OnSceneDurationEnd += LoadNext;
+    }
 
-	void OnDisable() {
-		if (useFade) {
-			FullscreenFade.OnFadeOutEnds -= loadNext;
-		} else {
-			SceneTimer.OnSceneDurationEnd -= loadNext;
-		}
-	}
+    void OnDisable()
+    {
+        if (useFade)
+        {
+            FullscreenFade.OnFadeOutEnds -= LoadNext;
+        }
+        else
+        {
+            SceneTimer.OnSceneDurationEnd -= LoadNext;
+        }
+    }
 
-	void Start () {
-		SceneManager.LoadSceneAsync(currentSceneIndex);
-	}
+    void Start()
+    {
+        LoadNext();
+    }
 
-	void loadNext() {
-		currentSceneIndex++;
-		if (SceneManager.sceneCountInBuildSettings > currentSceneIndex) {
-			SceneManager.LoadSceneAsync(currentSceneIndex);
-		} else {
-			currentSceneIndex = 1;
-			SceneManager.LoadSceneAsync(currentSceneIndex);
-		}
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
+    public void LoadNext()
+    {
+        StartCoroutine(LoadAsync());
+    }
+
+    private IEnumerator LoadAsync()
+    {
+        currentSceneIndex++;
+        AsyncOperation asyncLoader;
+        if (SceneManager.sceneCountInBuildSettings > currentSceneIndex)
+        {
+            asyncLoader = SceneManager.LoadSceneAsync(currentSceneIndex);
+        }
+        else
+        {
+            currentSceneIndex = 1;
+            asyncLoader = SceneManager.LoadSceneAsync(currentSceneIndex);
+        }
+        asyncLoader.allowSceneActivation = false;
+        Coroutine fade;
+        while (!asyncLoader.isDone)
+        {
+            if (asyncLoader.progress >= 0.9f)
+            {
+                fade = StartCoroutine(FadeAsync(false));
+                yield return fade;
+                asyncLoader.allowSceneActivation = true;
+            }
+            yield return null;
+        }
+		FadeController.UpdateCamera();
+        Coroutine fadeIn = StartCoroutine(FadeAsync(true));
+        yield return fadeIn;
+    }
+
+    private IEnumerator FadeAsync(bool fadeIn)
+    {
+        if (fadeIn)
+        {
+            Task t = FadeController.FadeInAsync();
+            while (!t.IsCompleted)
+            {
+                yield return null;
+            }
+        }
+        else
+        {
+            Task t = FadeController.FadeOutAsync();
+            while (!t.IsCompleted)
+            {
+                yield return null;
+            }
+        }
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+
+    }
 }
