@@ -3,98 +3,102 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Threading.Tasks;
-public class SceneController : MonoBehaviour
+namespace SlideshowTools
 {
-    private int currentSceneIndex = 0;
-    public bool useFade = false;
-    // Use this for initialization
-    private FullscreenFade FadeController;
-    void Awake()
+    public class SceneController : MonoBehaviour
     {
-		FadeController = gameObject.AddComponent<FullscreenFade>();
-        DontDestroyOnLoad(gameObject);
-    }
-
-    void OnEnable()
-    {
-        SceneTimer.OnSceneDurationEnd += LoadNext;
-    }
-
-    void OnDisable()
-    {
-        if (useFade)
+        private int currentSceneIndex = 0;
+        public bool useFade = false;
+        // Use this for initialization
+        private FullscreenFade FadeController;
+        void Awake()
         {
-            FullscreenFade.OnFadeOutEnds -= LoadNext;
+            FadeController = gameObject.AddComponent<FullscreenFade>();
+            DontDestroyOnLoad(gameObject);
         }
-        else
-        {
-            SceneTimer.OnSceneDurationEnd -= LoadNext;
-        }
-    }
 
-    void Start()
-    {
-        LoadNext();
-    }
-
-    public void LoadNext()
-    {
-        StartCoroutine(LoadAsync());
-    }
-
-    private IEnumerator LoadAsync()
-    {
-        currentSceneIndex++;
-        AsyncOperation asyncLoader;
-        if (SceneManager.sceneCountInBuildSettings > currentSceneIndex)
+        void OnEnable()
         {
-            asyncLoader = SceneManager.LoadSceneAsync(currentSceneIndex);
+            SceneTimer.OnSceneDurationEnd += LoadNext;
         }
-        else
+
+        void OnDisable()
         {
-            currentSceneIndex = 1;
-            asyncLoader = SceneManager.LoadSceneAsync(currentSceneIndex);
-        }
-        asyncLoader.allowSceneActivation = false;
-        Coroutine fade;
-        while (!asyncLoader.isDone)
-        {
-            if (asyncLoader.progress >= 0.9f)
+            if (useFade)
             {
-                fade = StartCoroutine(FadeAsync(false));
-                yield return fade;
-                asyncLoader.allowSceneActivation = true;
+                FullscreenFade.OnFadeOutEnds -= LoadNext;
             }
-            yield return null;
-        }
-		FadeController.UpdateCamera();
-        Coroutine fadeIn = StartCoroutine(FadeAsync(true));
-        yield return fadeIn;
-    }
-
-    private IEnumerator FadeAsync(bool fadeIn)
-    {
-        if (fadeIn)
-        {
-            Task t = FadeController.FadeInAsync();
-            while (!t.IsCompleted)
+            else
             {
+                SceneTimer.OnSceneDurationEnd -= LoadNext;
+            }
+        }
+
+        void Start()
+        {
+            LoadNext();
+        }
+
+        public void LoadNext()
+        {
+            StartCoroutine(LoadAsync());
+        }
+
+        private IEnumerator LoadAsync()
+        {
+            currentSceneIndex++;
+            AsyncOperation asyncLoader;
+            if (SceneManager.sceneCountInBuildSettings > currentSceneIndex)
+            {
+                asyncLoader = SceneManager.LoadSceneAsync(currentSceneIndex);
+            }
+            else
+            {
+                currentSceneIndex = 1;
+                asyncLoader = SceneManager.LoadSceneAsync(currentSceneIndex);
+            }
+            asyncLoader.allowSceneActivation = false;
+            Coroutine fade;
+            while (!asyncLoader.isDone)
+            {
+                if (asyncLoader.progress >= 0.9f)
+                {
+                    fade = StartCoroutine(FadeAsync(false));
+                    yield return fade;
+                    asyncLoader.allowSceneActivation = true;
+                }
                 yield return null;
             }
+            FadeController.UpdateCamera();
+            Coroutine fadeIn = StartCoroutine(FadeAsync(true));
+            yield return fadeIn;
         }
-        else
+
+        private IEnumerator FadeAsync(bool fadeIn)
         {
-            Task t = FadeController.FadeOutAsync();
-            while (!t.IsCompleted)
+            if (fadeIn)
             {
-                yield return null;
+                Task t = FadeController.FadeInAsync();
+                while (!t.IsCompleted)
+                {
+                    yield return null;
+                }
+            }
+            else
+            {
+                Task t = FadeController.FadeOutAsync();
+                while (!t.IsCompleted)
+                {
+                    yield return null;
+                }
             }
         }
-    }
 
-    // Update is called once per frame
-    void Update()
-    {
+        // Update is called once per frame
+        void Update()
+        {
 
+        }
     }
 }
+
