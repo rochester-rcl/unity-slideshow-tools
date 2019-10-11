@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Threading.Tasks;
+using OVR.OpenVR;
+
 namespace SlideshowTools
 {
     public class SceneController : MonoBehaviour
     {
         private int currentSceneIndex = 0;
         public bool useFade = false;
+        private bool loading = false;
         // Use this for initialization
         private FullscreenFade FadeController;
         void Awake()
@@ -71,6 +74,7 @@ namespace SlideshowTools
             }
             FadeController.UpdateCamera();
             Coroutine fadeIn = StartCoroutine(FadeAsync(true));
+            loading = false;
             yield return fadeIn;
         }
 
@@ -97,6 +101,21 @@ namespace SlideshowTools
         // Update is called once per frame
         void Update()
         {
+            if (!loading)
+            {
+                float primary_trigger_input = OVRInput.Get(OVRInput.Axis1D.PrimaryIndexTrigger);
+                float secondary_trigger_input = OVRInput.Get(OVRInput.Axis1D.SecondaryIndexTrigger);
+
+                if (primary_trigger_input == 1 || secondary_trigger_input == 1)
+                {
+                    LoadNext();
+                    loading = true;
+                }
+
+
+            }
+
+
 
         }
     }
